@@ -5,6 +5,11 @@ import os
 # Add root folder to sys.path so modules import correctly
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Ensure database is initialized on Cloud deployment
+from database.init_db import init_database, DB_PATH
+if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
+    init_database()
+
 # Set up page configurations first
 st.set_page_config(
     page_title="Local Food Wastage Management System",

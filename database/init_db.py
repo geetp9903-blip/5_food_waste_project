@@ -7,6 +7,8 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
 
 def init_database():
+    # Make sure parent directory exists
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     # Connect to SQLite database (creates it if it doesn't exist)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -88,43 +90,35 @@ def init_database():
     conn.commit()
     print("Tables created successfully.")
 
-    # Load and clean CSVs
+    # Load and clean CSVs safely
     print("Loading datasets...")
-    providers_df = pd.read_csv(os.path.join(DATA_DIR, "providers_data.csv"))
-    receivers_df = pd.read_csv(os.path.join(DATA_DIR, "receivers_data.csv"))
-    food_listings_df = pd.read_csv(os.path.join(DATA_DIR, "food_listings_data.csv"))
-    claims_df = pd.read_csv(os.path.join(DATA_DIR, "claims_data.csv"))
+    try:
+        providers_df = pd.read_csv(os.path.join(DATA_DIR, "providers_data.csv"))
+        receivers_df = pd.read_csv(os.path.join(DATA_DIR, "receivers_data.csv"))
+        food_listings_df = pd.read_csv(os.path.join(DATA_DIR, "food_listings_data.csv"))
+        claims_df = pd.read_csv(os.path.join(DATA_DIR, "claims_data.csv"))
 
-    # Clean date columns
-    # Expiry_Date formatting to standard YYYY-MM-DD
-    food_listings_df['Expiry_Date'] = pd.to_datetime(food_listings_df['Expiry_Date'], errors='coerce')
-    food_listings_df['Expiry_Date'] = food_listings_df['Expiry_Date'].dt.strftime('%Y-%m-%d')
+        # Clean date columns
+        food_listings_df['Expiry_Date'] = pd.to_datetime(food_listings_df['Expiry_Date'], errors='coerce')
+        food_listings_df['Expiry_Date'] = food_listings_df['Expiry_Date'].dt.strftime('%Y-%m-%d')
 
-    # Clean food types to correct messy CSV data
-    canonical_types = {
-        'Bread': 'Vegetarian',
-        'Soup': 'Vegetarian',
-        'Fruits': 'Vegan',
-        'Vegetables': 'Vegan',
-        'Dairy': 'Vegetarian',
-        'Rice': 'Vegan',
-        'Pasta': 'Vegetarian',
-        'Salad': 'Vegan',
-        'Chicken': 'Non-Vegetarian',
-        'Fish': 'Non-Vegetarian'
-    }
-    food_listings_df['Food_Type'] = food_listings_df['Food_Name'].map(canonical_types).fillna(food_listings_df['Food_Type'])
+        canonical_types = {
+            'Bread': 'Vegetarian', 'Soup': 'Vegetarian', 'Fruits': 'Vegan', 'Vegetables': 'Vegan',
+            'Dairy': 'Vegetarian', 'Rice': 'Vegan', 'Pasta': 'Vegetarian', 'Salad': 'Vegan',
+            'Chicken': 'Non-Vegetarian', 'Fish': 'Non-Vegetarian'
+        }
+        food_listings_df['Food_Type'] = food_listings_df['Food_Name'].map(canonical_types).fillna(food_listings_df['Food_Type'])
 
-    # Timestamp formatting to YYYY-MM-DD HH:MM:SS
-    claims_df['Timestamp'] = pd.to_datetime(claims_df['Timestamp'], errors='coerce')
-    claims_df['Timestamp'] = claims_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        claims_df['Timestamp'] = pd.to_datetime(claims_df['Timestamp'], errors='coerce')
+        claims_df['Timestamp'] = claims_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Insert data into tables using pandas to_sql
-    print("Ingesting data into SQL database...")
-    providers_df.to_sql("Providers", conn, if_exists="append", index=False)
-    receivers_df.to_sql("Receivers", conn, if_exists="append", index=False)
-    food_listings_df.to_sql("Food_Listings", conn, if_exists="append", index=False)
-    claims_df.to_sql("Claims", conn, if_exists="append", index=False)
+        print("Ingesting data into SQL database...")
+        providers_df.to_sql("Providers", conn, if_exists="append", index=False)
+        receivers_df.to_sql("Receivers", conn, if_exists="append", index=False)
+        food_listings_df.to_sql("Food_Listings", conn, if_exists="append", index=False)
+        claims_df.to_sql("Claims", conn, if_exists="append", index=False)
+    except Exception as e:
+        print(f"Warning: Could not load mock CSV data: {e}. Starting with an empty database.")
 
     conn.commit()
     conn.close()
@@ -133,6 +127,7 @@ def init_database():
 def migrate_database():
     """Migrates an existing database to add Users table and Created_By columns."""
     print("Migrating database...")
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 

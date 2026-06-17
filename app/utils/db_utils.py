@@ -8,6 +8,7 @@ DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
 
 def get_db_connection():
     """Establishes a connection to the SQLite database with row factory enabled."""
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     # Enable foreign keys
