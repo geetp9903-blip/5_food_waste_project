@@ -1,7 +1,10 @@
 import sqlite3
 import pandas as pd
 
-DB_PATH = "/Users/ferrarifanboy/Desktop/Labmentix_Internship/5_food_waste_project/database/food_waste.db"
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
 
 def get_db_connection():
     """Establishes a connection to the SQLite database with row factory enabled."""

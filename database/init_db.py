@@ -2,9 +2,9 @@ import os
 import sqlite3
 import pandas as pd
 
-# Paths
-DATA_DIR = "/Users/ferrarifanboy/Desktop/Labmentix_Internship/5_food_waste_project/data"
-DB_PATH = "/Users/ferrarifanboy/Desktop/Labmentix_Internship/5_food_waste_project/database/food_waste.db"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
 
 def init_database():
     # Connect to SQLite database (creates it if it doesn't exist)
