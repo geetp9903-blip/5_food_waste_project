@@ -98,8 +98,8 @@ def render_education_section():
     with m_col6:
         st.markdown(
             f"""
-            <div class="glass-card" style="text-align: center; border-top: 4px solid #fb7185;">
-                <h2 style="color: #fb7185; margin: 0;">{successful_claims:,}</h2>
+            <div class="glass-card" style="text-align: center; border-top: 4px solid #2dd4bf;">
+                <h2 style="color: #2dd4bf; margin: 0;">{successful_claims:,}</h2>
                 <p style="font-size: 0.9rem; color: #cbd5e1; margin: 5px 0 0 0;">Successful Claim Distributions</p>
             </div>
             """,
@@ -159,7 +159,7 @@ def render_education_section():
         st.markdown(
             """
             <div class="glass-card" style="height: 100%; margin-top: 15px;">
-                <h4 style="color: #fb7185; margin-top:0;">Step 4: Explore Data (Analytics)</h4>
+                <h4 style="color: #2dd4bf; margin-top:0;">Step 4: Explore Data (Analytics)</h4>
                 <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.5;">
                     Head over to the <strong>Analytics (Decide)</strong> tab to see the bigger picture. 
                     <br><br>

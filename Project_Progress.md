@@ -30,3 +30,9 @@ I have successfully structured and built the core functionality of the Local Foo
 *   **Query 6 Combo Chart Integration**: I upgraded Query 6's simple bar chart to a stacked dual-axis combo chart (Bar columns for Total Quantity, Line markers for Listing Count) using `plotly.graph_objects` to enable multi-dimensional city-wise visualization.
 *   **Strict Table sorting DESC**: I aligned the sorting across all output tables (date-based tables showing newest dates first, count/quantity tables ordered DESC by metrics) to guarantee readability.
 *   **Cleaned Act Marketplace**: I removed the CRUD operations tab to adapt the application to a user-centric listing/claiming profile environment.
+
+## 7. Static Database Integration for Analytics Consistency (Current Iteration)
+*   **Static Database Creation**: I updated the database initialization logic (`database/init_db.py`) to create a second SQLite database, `food_waste_static.db`, populated exclusively with pristine raw CSV data.
+*   **Dynamic Query Routing**: I added routing to `database/queries.py` to selectively query either the static database or the active database depending on Streamlit session state, defaulting to the static database.
+*   **Interactive Selector UI**: I integrated a radio toggle under the analytics title to allow users to switch the data source dynamically between "Original Raw Data (Static)" and "Live App Data (Active)".
+*   **Query 3 Synchronization**: I synchronized the directory lookup filter query to run dynamically on the selected database so that new partner cities are excluded from the static view but visible in the live view.

@@ -6,8 +6,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Ensure database is initialized on Cloud deployment
-from database.init_db import init_database, DB_PATH
-if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
+from database.init_db import init_database, DB_PATH, DB_STATIC_PATH
+if (not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0 or
+    not os.path.exists(DB_STATIC_PATH) or os.path.getsize(DB_STATIC_PATH) == 0):
     init_database()
 
 # Set up page configurations first

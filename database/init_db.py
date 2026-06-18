@@ -5,12 +5,13 @@ import pandas as pd
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
+DB_STATIC_PATH = os.path.join(BASE_DIR, "database", "food_waste_static.db")
 
-def init_database():
+def init_single_db(db_path):
     # Make sure parent directory exists
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
     # Connect to SQLite database (creates it if it doesn't exist)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     # Enable foreign keys
@@ -24,7 +25,7 @@ def init_database():
     cursor.execute("DROP TABLE IF EXISTS Users;")
 
     # Create tables with constraints
-    print("Creating tables...")
+    print(f"Creating tables in {os.path.basename(db_path)}...")
     cursor.execute("""
     CREATE TABLE Users (
         User_ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,10 +89,10 @@ def init_database():
     """)
 
     conn.commit()
-    print("Tables created successfully.")
+    print(f"Tables created successfully in {os.path.basename(db_path)}.")
 
     # Load and clean CSVs safely
-    print("Loading datasets...")
+    print(f"Loading datasets for {os.path.basename(db_path)}...")
     try:
         providers_df = pd.read_csv(os.path.join(DATA_DIR, "providers_data.csv"))
         receivers_df = pd.read_csv(os.path.join(DATA_DIR, "receivers_data.csv"))
@@ -112,17 +113,22 @@ def init_database():
         claims_df['Timestamp'] = pd.to_datetime(claims_df['Timestamp'], errors='coerce')
         claims_df['Timestamp'] = claims_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        print("Ingesting data into SQL database...")
+        print(f"Ingesting data into SQL database {os.path.basename(db_path)}...")
         providers_df.to_sql("Providers", conn, if_exists="append", index=False)
         receivers_df.to_sql("Receivers", conn, if_exists="append", index=False)
         food_listings_df.to_sql("Food_Listings", conn, if_exists="append", index=False)
         claims_df.to_sql("Claims", conn, if_exists="append", index=False)
     except Exception as e:
-        print(f"Warning: Could not load mock CSV data: {e}. Starting with an empty database.")
+        print(f"Warning: Could not load mock CSV data for {os.path.basename(db_path)}: {e}. Starting with an empty database.")
 
     conn.commit()
     conn.close()
-    print("Database initialization complete! Saved to:", DB_PATH)
+    print(f"Database initialization complete! Saved to: {db_path}")
+
+def init_database():
+    """Initializes both active and static databases."""
+    init_single_db(DB_PATH)
+    init_single_db(DB_STATIC_PATH)
 
 def migrate_database():
     """Migrates an existing database to add Users table and Created_By columns."""

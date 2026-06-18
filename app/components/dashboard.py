@@ -9,8 +9,22 @@ from app.utils.auth_utils import get_current_user
 
 def render_dashboard_section():
     user = get_current_user()
+    
+    # Header layout with Data Source Toggle
     st.title(f"📊 Analytics Dashboard for {user['Display_Name']}")
-    st.markdown("### *Explore trends, distributions, and perform SQL analytical queries.*")
+    
+    col_sub, col_toggle = st.columns([2, 1])
+    with col_sub:
+        st.markdown("### *Explore trends, distributions, and perform SQL analytical queries.*")
+    with col_toggle:
+        data_source = st.radio(
+            "Visualizations Data Source:",
+            ["Original Raw Data (Static)", "Live App Data (Active)"],
+            index=0,
+            horizontal=True,
+            help="Choose 'Original Raw Data' to view consistent historical analytics, or 'Live App Data' to see user session changes."
+        )
+        st.session_state["analytics_data_source"] = data_source
     
     # ------------------ TOP METRICS ------------------
     st.markdown("#### Platform Summary")
@@ -134,7 +148,7 @@ def render_dashboard_section():
         st.markdown("**Description**: Parametric search listing providers in a selected city along with their contact info.")
         
         # Get unique cities
-        cities_df = execute_query("SELECT DISTINCT City FROM Providers ORDER BY City ASC;")
+        cities_df = queries.run_query("SELECT DISTINCT City FROM Providers ORDER BY City ASC;")
         city_list = cities_df['City'].tolist() if not cities_df.empty else []
         
         selected_city = st.selectbox("Select City for Directory Lookup:", city_list)
@@ -261,7 +275,7 @@ def render_dashboard_section():
                 )
                 
                 fig.add_trace(
-                    go.Scatter(x=df_subset['City'], y=df_subset['Listing_Count'], name="Listing Count", mode="lines+markers", line=dict(color='#fb7185', width=3)),
+                    go.Scatter(x=df_subset['City'], y=df_subset['Listing_Count'], name="Listing Count", mode="lines+markers", line=dict(color='#2dd4bf', width=3)),
                     secondary_y=True,
                 )
                 

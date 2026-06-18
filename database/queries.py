@@ -5,10 +5,25 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "database", "food_waste.db")
+DB_STATIC_PATH = os.path.join(BASE_DIR, "database", "food_waste_static.db")
+
+def get_current_db_path():
+    """Helper to dynamically resolve which database path to connect to."""
+    try:
+        import streamlit as st
+        # If the user explicitly sets to Live App Data, query DB_PATH.
+        # Otherwise, default to DB_STATIC_PATH for consistent raw visualizations.
+        source = st.session_state.get("analytics_data_source")
+        if source == "Live App Data (Active)":
+            return DB_PATH
+    except Exception:
+        pass
+    return DB_STATIC_PATH
 
 def run_query(query, params=()):
     """Helper function to execute an SQL query and return a Pandas DataFrame."""
-    conn = sqlite3.connect(DB_PATH)
+    db_file = get_current_db_path()
+    conn = sqlite3.connect(db_file)
     try:
         df = pd.read_sql_query(query, conn, params=params)
         return df
