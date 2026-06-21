@@ -38,5 +38,8 @@ I have successfully structured and built the core functionality of the Local Foo
 *   **Query 3 Synchronization**: I synchronized the directory lookup filter query to run dynamically on the selected database so that new partner cities are excluded from the static view but visible in the live view.
 
 ## 8. Cohesive Visual Theme across Visualizations
-*   I created a chart utility module `app/utils/chart_utils.py` defining custom, high-contrast monochromatic palettes (Blue, Red, Green, Yellow) and semantic maps (for claim status and food types).
+*   I created a chart utility module `app/utils/chart_utils.py` defining custom, high-contrast monochromatic palettes (Blue, Red, Green, Yellow), distinct category maps (for provider types), and semantic maps (for claim status and food types).
 *   I refactored all 12 Plotly figures in `app/components/dashboard.py` to apply the monochromatic sequences and semantic colors, and integrated a premium layout utility to render clean, transparent charts matching the glass card aesthetics.
+*   I added value-based gradients to Query 6 (Cities combo chart) and Query 11 (Top Receivers by Claim Size) to enhance visual hierarchy.
+*   I utilized distinct category colors in Query 13 to clearly differentiate partner types (supermarkets, restaurants, individuals, etc.).
+*   I resolved a runtime exception in Query 15 by implementing a custom inline CSS styling fallback `style_expiry_dataframe` for pandas dataframes, removing the dependency on matplotlib.

@@ -25,6 +25,16 @@ STATUS_COLOR_MAP = {
     'Rejected': '#f87171'         # Light Red-400
 }
 
+# Distinct categories mapping for provider types
+PROVIDER_TYPE_COLOR_MAP = {
+    'Restaurant': '#38bdf8',      # Blue
+    'Grocery Store': '#22c55e',   # Green
+    'Supermarket': '#facc15',     # Yellow
+    'Bakery': '#ef4444',          # Red
+    'Individual': '#a78bfa',      # Purple
+    'Other': '#cbd5e1'            # Slate
+}
+
 def apply_premium_chart_layout(fig):
     """
     Applies custom dark mode styling to the chart layout (transparency, fonts, gridlines, hover).
@@ -80,3 +90,24 @@ def apply_premium_chart_layout(fig):
                 trace.hole = 0.4
                 
     return fig
+
+def style_expiry_dataframe(df):
+    """
+    Styles the expiry dataframe using custom CSS background colors without requiring matplotlib.
+    Highlights larger quantities in soft red tones.
+    """
+    def make_red_gradient(val):
+        try:
+            v = float(val)
+            # Map quantity range to intensity (cap at 250 for scaling)
+            intensity = min(0.4, max(0.05, v / 250.0))
+            return f'background-color: rgba(239, 68, 68, {intensity}); color: #fca5a5; font-weight: 500;'
+        except (ValueError, TypeError):
+            return ''
+    
+    # Check for pandas newer styler map vs deprecated applymap
+    if hasattr(df.style, 'map'):
+        return df.style.map(make_red_gradient, subset=['Quantity'])
+    else:
+        return df.style.applymap(make_red_gradient, subset=['Quantity'])
+

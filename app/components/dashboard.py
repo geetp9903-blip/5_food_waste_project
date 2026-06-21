@@ -13,7 +13,9 @@ from app.utils.chart_utils import (
     GREEN_PALETTE,
     YELLOW_PALETTE,
     FOOD_TYPE_COLOR_MAP,
-    STATUS_COLOR_MAP
+    STATUS_COLOR_MAP,
+    PROVIDER_TYPE_COLOR_MAP,
+    style_expiry_dataframe
 )
 
 def render_dashboard_section():
@@ -282,7 +284,12 @@ def render_dashboard_section():
                 
                 fig.add_trace(
                     go.Bar(x=df_subset['City'], y=df_subset['Total_Quantity'], name="Total Quantity (Units)", 
-                           marker_color=BLUE_PALETTE[1], marker_line=dict(color='rgba(255,255,255,0.1)', width=1)),
+                           marker=dict(
+                               color=df_subset['Total_Quantity'],
+                               colorscale=[[0, '#1d4ed8'], [1, '#38bdf8']], # Monochromatic Blue Gradient
+                               showscale=False,
+                               line=dict(color='rgba(255,255,255,0.1)', width=1)
+                           )),
                     secondary_y=False,
                 )
                 
@@ -447,9 +454,11 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Top 10 Receivers by Avg Claim Size")
                 fig = px.bar(df.head(10), x='Avg_Quantity_Claimed', y='Receiver_Name',
-                             orientation='h', color_discrete_sequence=[YELLOW_PALETTE[1]],
+                             orientation='h', 
+                             color='Avg_Quantity_Claimed',
+                             color_continuous_scale=[[0, '#b45309'], [1, '#fde047']], # Amber to Yellow gradient
                              template='plotly_dark')
-                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False)
                 apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -508,7 +517,7 @@ def render_dashboard_section():
                 st.markdown("##### Top 10 Donors (Quantity)")
                 fig = px.bar(df.head(10), x='Total_Quantity_Donated', y='Provider_Name',
                              orientation='h', color='Provider_Type',
-                             color_discrete_sequence=BLUE_PALETTE,
+                             color_discrete_map=PROVIDER_TYPE_COLOR_MAP,
                              template='plotly_dark')
                 fig.update_layout(yaxis={'categoryorder':'total ascending'})
                 apply_premium_chart_layout(fig)
@@ -564,7 +573,7 @@ def render_dashboard_section():
         st.markdown("##### Urgently Expiring Food Items")
         if not df.empty:
             st.dataframe(
-                df.style.background_gradient(subset=['Quantity'], cmap='Reds'),
+                style_expiry_dataframe(df),
                 use_container_width=True,
                 hide_index=True
             )
