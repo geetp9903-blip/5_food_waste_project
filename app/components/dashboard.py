@@ -261,7 +261,7 @@ def render_dashboard_section():
                SUM(Quantity) as Total_Quantity
         FROM Food_Listings
         GROUP BY Location
-        ORDER BY Listing_Count DESC;
+        ORDER BY Total_Quantity DESC;
         """
         st.code(sql_code, language="sql")
         
