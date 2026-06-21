@@ -52,21 +52,24 @@ def apply_premium_chart_layout(fig):
         )
     )
     
-    # Configure axes if present
-    fig.update_xaxes(
-        showgrid=True,
-        gridcolor=grid_color,
-        zeroline=False,
-        tickfont=dict(color='#94a3b8'),
-        titlefont=dict(color='#cbd5e1')
-    )
-    fig.update_yaxes(
-        showgrid=True,
-        gridcolor=grid_color,
-        zeroline=False,
-        tickfont=dict(color='#94a3b8'),
-        titlefont=dict(color='#cbd5e1')
-    )
+    # Configure axes if present (safely ignored on non-Cartesian charts like Pie/Donut charts)
+    try:
+        fig.update_xaxes(
+            showgrid=True,
+            gridcolor=grid_color,
+            zeroline=False,
+            tickfont=dict(color='#94a3b8'),
+            titlefont=dict(color='#cbd5e1')
+        )
+        fig.update_yaxes(
+            showgrid=True,
+            gridcolor=grid_color,
+            zeroline=False,
+            tickfont=dict(color='#94a3b8'),
+            titlefont=dict(color='#cbd5e1')
+        )
+    except Exception:
+        pass
     
     # Customise Pie/Donut traces specifically if they are present in the figure
     for trace in fig.data:
