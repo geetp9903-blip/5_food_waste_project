@@ -144,19 +144,16 @@ def get_claims_per_food_item():
     """
     return run_query(query)
 
-# --- Query 9: Provider with Highest Successful Claims ---
-def get_provider_highest_successful_claims():
+# --- Query 9: Top Diverse Providers by Food Type ---
+def get_top_diverse_providers_by_food_type():
     query = """
     SELECT p.Name as Provider_Name, 
            p.Type as Provider_Type,
-           COUNT(c.Claim_ID) as Successful_Claims_Count
-    FROM Claims c
-    JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
+           COUNT(DISTINCT fl.Food_Type) as Distinct_Food_Types
+    FROM Food_Listings fl
     JOIN Providers p ON fl.Provider_ID = p.Provider_ID
-    WHERE c.Status = 'Completed'
     GROUP BY p.Provider_ID, p.Name, p.Type
-    ORDER BY Successful_Claims_Count DESC
-    LIMIT 5;
+    ORDER BY Distinct_Food_Types DESC;
     """
     return run_query(query)
 
@@ -171,28 +168,45 @@ def get_claim_status_percentage():
     """
     return run_query(query)
 
-# --- Query 11: Average Quantity Claimed per Receiver ---
-def get_avg_claimed_quantity_per_receiver():
+# --- Query 11: Receiver Claim Volume Distribution ---
+def get_receiver_claim_volume_distribution():
     query = """
-    SELECT r.Name as Receiver_Name, 
-           ROUND(AVG(fl.Quantity), 2) as Avg_Quantity_Claimed
-    FROM Claims c
-    JOIN Receivers r ON c.Receiver_ID = r.Receiver_ID
-    JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
-    GROUP BY r.Receiver_ID, r.Name
-    ORDER BY Avg_Quantity_Claimed DESC;
+    SELECT 
+        CASE 
+            WHEN Total_Qty BETWEEN 0 AND 25 THEN '0-25'
+            WHEN Total_Qty BETWEEN 26 AND 50 THEN '26-50'
+            WHEN Total_Qty BETWEEN 51 AND 75 THEN '51-75'
+            WHEN Total_Qty BETWEEN 76 AND 100 THEN '76-100'
+            WHEN Total_Qty BETWEEN 101 AND 125 THEN '101-125'
+            WHEN Total_Qty BETWEEN 126 AND 150 THEN '126-150'
+            WHEN Total_Qty BETWEEN 151 AND 175 THEN '151-175'
+            WHEN Total_Qty BETWEEN 176 AND 200 THEN '176-200'
+        END as Volume_Bracket,
+        COUNT(*) as Receiver_Count
+    FROM (
+        SELECT r.Receiver_ID, SUM(fl.Quantity) as Total_Qty
+        FROM Claims c
+        JOIN Receivers r ON c.Receiver_ID = r.Receiver_ID
+        JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
+        GROUP BY r.Receiver_ID
+    )
+    GROUP BY Volume_Bracket
+    ORDER BY MIN(Total_Qty) ASC;
     """
     return run_query(query)
 
-# --- Query 12: Meal Type Demand ---
-def get_meal_type_demand():
+# --- Query 12: City-wise Claim Completion Rate ---
+def get_city_claim_completion_rate():
     query = """
-    SELECT fl.Meal_Type, 
-           COUNT(c.Claim_ID) as Claim_Count
+    SELECT fl.Location as City,
+           COUNT(c.Claim_ID) as Total_Claims,
+           SUM(CASE WHEN c.Status = 'Completed' THEN 1 ELSE 0 END) as Completed_Claims,
+           ROUND(SUM(CASE WHEN c.Status = 'Completed' THEN 1 ELSE 0 END) * 100.0 / COUNT(c.Claim_ID), 1) as Completion_Rate
     FROM Claims c
     JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
-    GROUP BY fl.Meal_Type
-    ORDER BY Claim_Count DESC;
+    GROUP BY fl.Location
+    HAVING COUNT(c.Claim_ID) >= 5
+    ORDER BY Completion_Rate DESC;
     """
     return run_query(query)
 
@@ -209,14 +223,18 @@ def get_total_donated_by_provider():
     """
     return run_query(query)
 
-# --- Query 14: Average Quantity Listed by Food Type ---
-def get_avg_listed_quantity_by_food_type():
+# --- Query 14: Provider Type Efficiency (Claims vs Listings) ---
+def get_provider_type_efficiency():
     query = """
-    SELECT Food_Type, 
-           ROUND(AVG(Quantity), 2) as Avg_Quantity_Listed
-    FROM Food_Listings
-    GROUP BY Food_Type
-    ORDER BY Avg_Quantity_Listed DESC;
+    SELECT p.Type as Provider_Type,
+           COUNT(DISTINCT fl.Food_ID) as Total_Listings,
+           COUNT(DISTINCT c.Claim_ID) as Total_Claims,
+           ROUND(COUNT(DISTINCT c.Claim_ID) * 100.0 / COUNT(DISTINCT fl.Food_ID), 1) as Claim_Rate_Pct
+    FROM Food_Listings fl
+    JOIN Providers p ON fl.Provider_ID = p.Provider_ID
+    LEFT JOIN Claims c ON fl.Food_ID = c.Food_ID
+    GROUP BY p.Type
+    ORDER BY Claim_Rate_Pct DESC;
     """
     return run_query(query)
 

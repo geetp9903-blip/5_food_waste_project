@@ -82,12 +82,12 @@ def render_dashboard_section():
         "6. Cities with the Highest Number of Listings",
         "7. Most Commonly Available Food Types",
         "8. Number of Claims per Food Item",
-        "9. Providers with Most Successful Claims",
+        "9. Top Diverse Providers by Food Type",
         "10. Claim Status Percentage Breakdown",
-        "11. Average Quantity Claimed per Receiver",
-        "12. Meal Type Demand (Claims)",
+        "11. Receiver Claim Volume Distribution",
+        "12. City-wise Claim Completion Rate",
         "13. Total Quantity Donated by Provider",
-        "14. Average Quantity Listed by Food Type",
+        "14. Provider Type Efficiency (Claims vs Listings)",
         "15. Top 10 Listings Closest to Expiry"
     ]
 
@@ -206,11 +206,12 @@ def render_dashboard_section():
                 st.dataframe(df, use_container_width=True, hide_index=True)
             with col_right:
                 st.markdown("##### Top 10 Receivers (Quantity Claimed)")
-                fig = px.bar(df.head(10), x='Total_Quantity_Claimed', y='Receiver_Name', orientation='h',
-                             color='Receiver_Type',
-                             color_discrete_sequence=BLUE_PALETTE,
+                df_top10 = df.head(10).copy()
+                fig = px.bar(df_top10, x='Total_Quantity_Claimed', y='Receiver_Name', orientation='h',
+                             color='Total_Quantity_Claimed',
+                             color_continuous_scale=[[0, '#bfdbfe'], [0.5, '#3b82f6'], [1, '#1e3a8a']],
                              template='plotly_dark')
-                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False)
                 apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -286,7 +287,7 @@ def render_dashboard_section():
                     go.Bar(x=df_subset['City'], y=df_subset['Total_Quantity'], name="Total Quantity (Units)", 
                            marker=dict(
                                color=df_subset['Total_Quantity'],
-                               colorscale=[[0, '#1d4ed8'], [1, '#38bdf8']], # Monochromatic Blue Gradient
+                               colorscale=[[0, '#bfdbfe'], [0.5, '#3b82f6'], [1, '#1e3a8a']], # Light to Dark Blue Gradient
                                showscale=False,
                                line=dict(color='rgba(255,255,255,0.1)', width=1)
                            )),
@@ -369,35 +370,36 @@ def render_dashboard_section():
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("9. "):
-        st.subheader("Query 9: Providers with Most Successful Claims")
-        st.markdown("**Description**: Identifies top performing providers whose donations have successfully reached receivers.")
+        st.subheader("Query 9: Top Diverse Providers by Food Type")
+        st.markdown("**Description**: Ranks providers by the number of distinct food types they supply, highlighting the most versatile contributors.")
         
         sql_code = """
         SELECT p.Name as Provider_Name, 
                p.Type as Provider_Type,
-               COUNT(c.Claim_ID) as Successful_Claims_Count
-        FROM Claims c
-        JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
+               COUNT(DISTINCT fl.Food_Type) as Distinct_Food_Types
+        FROM Food_Listings fl
         JOIN Providers p ON fl.Provider_ID = p.Provider_ID
-        WHERE c.Status = 'Completed'
         GROUP BY p.Provider_ID, p.Name, p.Type
-        ORDER BY Successful_Claims_Count DESC
-        LIMIT 5;
+        ORDER BY Distinct_Food_Types DESC;
         """
         st.code(sql_code, language="sql")
         
-        df = queries.get_provider_highest_successful_claims()
+        df = queries.get_top_diverse_providers_by_food_type()
         
         if not df.empty:
             col_left, col_right = st.columns([1, 1])
             with col_left:
-                st.markdown("##### Raw Output Table")
-                st.dataframe(df, use_container_width=True, hide_index=True)
+                st.markdown("##### Raw Output Table (Top 15)")
+                st.dataframe(df.head(15), use_container_width=True, hide_index=True)
             with col_right:
-                st.markdown("##### Successful Claims Top Providers")
-                fig = px.bar(df, x='Provider_Name', y='Successful_Claims_Count', color='Provider_Type',
-                             color_discrete_sequence=GREEN_PALETTE,
+                st.markdown("##### Top 10 Most Diverse Providers")
+                df_top10 = df.head(10).copy()
+                fig = px.bar(df_top10, x='Distinct_Food_Types', y='Provider_Name',
+                             orientation='h',
+                             color='Distinct_Food_Types',
+                             color_continuous_scale=[[0, '#bbf7d0'], [0.5, '#22c55e'], [1, '#14532d']],
                              template='plotly_dark')
+                fig.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False)
                 apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -430,53 +432,35 @@ def render_dashboard_section():
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("11. "):
-        st.subheader("Query 11: Average Quantity Claimed per Receiver")
-        st.markdown("**Description**: Evaluates the average sizing of claims requested by different receiving organizations.")
+        st.subheader("Query 11: Receiver Claim Volume Distribution")
+        st.markdown("**Description**: Groups receivers into volume brackets by total quantity claimed, revealing how claim activity is distributed across the receiver population.")
         
         sql_code = """
-        SELECT r.Name as Receiver_Name, 
-               ROUND(AVG(fl.Quantity), 2) as Avg_Quantity_Claimed
-        FROM Claims c
-        JOIN Receivers r ON c.Receiver_ID = r.Receiver_ID
-        JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
-        GROUP BY r.Receiver_ID, r.Name
-        ORDER BY Avg_Quantity_Claimed DESC;
+        SELECT 
+            CASE 
+                WHEN Total_Qty BETWEEN 0 AND 25 THEN '0-25'
+                WHEN Total_Qty BETWEEN 26 AND 50 THEN '26-50'
+                WHEN Total_Qty BETWEEN 51 AND 75 THEN '51-75'
+                WHEN Total_Qty BETWEEN 76 AND 100 THEN '76-100'
+                WHEN Total_Qty BETWEEN 101 AND 125 THEN '101-125'
+                WHEN Total_Qty BETWEEN 126 AND 150 THEN '126-150'
+                WHEN Total_Qty BETWEEN 151 AND 175 THEN '151-175'
+                WHEN Total_Qty BETWEEN 176 AND 200 THEN '176-200'
+            END as Volume_Bracket,
+            COUNT(*) as Receiver_Count
+        FROM (
+            SELECT r.Receiver_ID, SUM(fl.Quantity) as Total_Qty
+            FROM Claims c
+            JOIN Receivers r ON c.Receiver_ID = r.Receiver_ID
+            JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
+            GROUP BY r.Receiver_ID
+        )
+        GROUP BY Volume_Bracket
+        ORDER BY MIN(Total_Qty) ASC;
         """
         st.code(sql_code, language="sql")
         
-        df = queries.get_avg_claimed_quantity_per_receiver()
-        
-        if not df.empty:
-            col_left, col_right = st.columns([1, 1])
-            with col_left:
-                st.markdown("##### Raw Output Table (Top 15)")
-                st.dataframe(df.head(15), use_container_width=True, hide_index=True)
-            with col_right:
-                st.markdown("##### Top 10 Receivers by Avg Claim Size")
-                fig = px.bar(df.head(10), x='Avg_Quantity_Claimed', y='Receiver_Name',
-                             orientation='h', 
-                             color='Avg_Quantity_Claimed',
-                             color_continuous_scale=[[0, '#b45309'], [1, '#fde047']], # Amber to Yellow gradient
-                             template='plotly_dark')
-                fig.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False)
-                apply_premium_chart_layout(fig)
-                st.plotly_chart(fig, use_container_width=True)
-
-    elif selected_query_label.startswith("12. "):
-        st.subheader("Query 12: Meal Type Demand (Claims)")
-        st.markdown("**Description**: Compares which time-of-day meal types are claimed most frequently.")
-        
-        sql_code = """
-        SELECT fl.Meal_Type, 
-               COUNT(c.Claim_ID) as Claim_Count
-        FROM Claims c
-        JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
-        GROUP BY fl.Meal_Type
-        ORDER BY Claim_Count DESC;
-        """
-        st.code(sql_code, language="sql")
-        
-        df = queries.get_meal_type_demand()
+        df = queries.get_receiver_claim_volume_distribution()
         
         if not df.empty:
             col_left, col_right = st.columns([1, 1])
@@ -484,10 +468,51 @@ def render_dashboard_section():
                 st.markdown("##### Raw Output Table")
                 st.dataframe(df, use_container_width=True, hide_index=True)
             with col_right:
-                st.markdown("##### Claim Count by Meal Type")
-                fig = px.bar(df, x='Meal_Type', y='Claim_Count',
-                             color='Meal_Type', color_discrete_sequence=RED_PALETTE,
+                st.markdown("##### Receivers by Claim Volume Bracket")
+                fig = px.bar(df, x='Volume_Bracket', y='Receiver_Count',
+                             color='Receiver_Count',
+                             color_continuous_scale=[[0, '#fde68a'], [0.5, '#f59e0b'], [1, '#78350f']],
                              template='plotly_dark')
+                fig.update_layout(coloraxis_showscale=False,
+                                  xaxis_title='Total Quantity Claimed (Bracket)',
+                                  yaxis_title='Number of Receivers')
+                apply_premium_chart_layout(fig)
+                st.plotly_chart(fig, use_container_width=True)
+
+    elif selected_query_label.startswith("12. "):
+        st.subheader("Query 12: City-wise Claim Completion Rate")
+        st.markdown("**Description**: Measures platform efficiency per city — what percentage of claims in each city are successfully completed.")
+        
+        sql_code = """
+        SELECT fl.Location as City,
+               COUNT(c.Claim_ID) as Total_Claims,
+               SUM(CASE WHEN c.Status = 'Completed' THEN 1 ELSE 0 END) as Completed_Claims,
+               ROUND(SUM(CASE WHEN c.Status = 'Completed' THEN 1 ELSE 0 END) * 100.0 / COUNT(c.Claim_ID), 1) as Completion_Rate
+        FROM Claims c
+        JOIN Food_Listings fl ON c.Food_ID = fl.Food_ID
+        GROUP BY fl.Location
+        HAVING COUNT(c.Claim_ID) >= 5
+        ORDER BY Completion_Rate DESC;
+        """
+        st.code(sql_code, language="sql")
+        
+        df = queries.get_city_claim_completion_rate()
+        
+        if not df.empty:
+            col_left, col_right = st.columns([1, 1])
+            with col_left:
+                st.markdown("##### Raw Output Table")
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            with col_right:
+                st.markdown("##### Top 10 Cities by Completion Rate")
+                df_top10 = df.head(10).copy()
+                fig = px.bar(df_top10, x='Completion_Rate', y='City',
+                             orientation='h',
+                             color='Completion_Rate',
+                             color_continuous_scale=[[0, '#bbf7d0'], [0.5, '#22c55e'], [1, '#14532d']],
+                             template='plotly_dark')
+                fig.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False,
+                                  xaxis_title='Completion Rate (%)')
                 apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -524,19 +549,23 @@ def render_dashboard_section():
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("14. "):
-        st.subheader("Query 14: Average Quantity Listed by Food Type")
-        st.markdown("**Description**: Displays standard listing scale by food categories.")
+        st.subheader("Query 14: Provider Type Efficiency (Claims vs Listings)")
+        st.markdown("**Description**: Compares the claim-to-listing ratio across provider types, measuring how effectively each type's donations get picked up.")
         
         sql_code = """
-        SELECT Food_Type, 
-               ROUND(AVG(Quantity), 2) as Avg_Quantity_Listed
-        FROM Food_Listings
-        GROUP BY Food_Type
-        ORDER BY Avg_Quantity_Listed DESC;
+        SELECT p.Type as Provider_Type,
+               COUNT(DISTINCT fl.Food_ID) as Total_Listings,
+               COUNT(DISTINCT c.Claim_ID) as Total_Claims,
+               ROUND(COUNT(DISTINCT c.Claim_ID) * 100.0 / COUNT(DISTINCT fl.Food_ID), 1) as Claim_Rate_Pct
+        FROM Food_Listings fl
+        JOIN Providers p ON fl.Provider_ID = p.Provider_ID
+        LEFT JOIN Claims c ON fl.Food_ID = c.Food_ID
+        GROUP BY p.Type
+        ORDER BY Claim_Rate_Pct DESC;
         """
         st.code(sql_code, language="sql")
         
-        df = queries.get_avg_listed_quantity_by_food_type()
+        df = queries.get_provider_type_efficiency()
         
         if not df.empty:
             col_left, col_right = st.columns([1, 1])
@@ -544,10 +573,18 @@ def render_dashboard_section():
                 st.markdown("##### Raw Output Table")
                 st.dataframe(df, use_container_width=True, hide_index=True)
             with col_right:
-                st.markdown("##### Avg Quantity per Listing by Type")
-                fig = px.bar(df, x='Food_Type', y='Avg_Quantity_Listed',
-                             color='Food_Type', color_discrete_map=FOOD_TYPE_COLOR_MAP,
-                             template='plotly_dark')
+                st.markdown("##### Claim Rate by Provider Type")
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=df['Provider_Type'], y=df['Total_Listings'],
+                    name='Listings', marker_color='#60a5fa'
+                ))
+                fig.add_trace(go.Bar(
+                    x=df['Provider_Type'], y=df['Total_Claims'],
+                    name='Claims', marker_color='#22c55e'
+                ))
+                fig.update_layout(barmode='group',
+                                  legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                 apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
