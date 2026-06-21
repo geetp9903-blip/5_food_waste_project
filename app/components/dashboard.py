@@ -270,8 +270,8 @@ def render_dashboard_section():
         df = queries.get_cities_by_listings()
         
         if not df.empty:
-            # Sort by Listing_Count DESC for both table and chart
-            df = df.sort_values(by='Listing_Count', ascending=False)
+            # Sort by Total_Quantity DESC for both table and chart
+            df = df.sort_values(by='Total_Quantity', ascending=False)
             
             col_left, col_right = st.columns([1, 1])
             with col_left:
