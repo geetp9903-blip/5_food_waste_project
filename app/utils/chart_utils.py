@@ -1,0 +1,79 @@
+"""
+Chart Utility module for consistent monochromatic and semantic visualization themes.
+Matches the ZeroWaste dark violet-purple background design system.
+"""
+
+import plotly.graph_objects as go
+
+# Custom monochromatic color palettes tailored for high-contrast on dark backgrounds
+BLUE_PALETTE = ['#38bdf8', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8']
+RED_PALETTE = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c']
+GREEN_PALETTE = ['#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d']
+YELLOW_PALETTE = ['#fde047', '#facc15', '#f59e0b', '#d97706', '#b45309']
+
+# Semantic mappings for consistency across visualizations
+FOOD_TYPE_COLOR_MAP = {
+    'Vegetarian': '#22c55e',      # Green-500
+    'Vegan': '#3b82f6',           # Blue-500 (Matches premium vegan theme)
+    'Non-Vegetarian': '#ef4444'   # Red-500
+}
+
+STATUS_COLOR_MAP = {
+    'Completed': '#22c55e',       # Green-500
+    'Pending': '#fbbf24',         # Amber-400
+    'Cancelled': '#ef4444',       # Red-500
+    'Rejected': '#f87171'         # Light Red-400
+}
+
+def apply_premium_chart_layout(fig):
+    """
+    Applies custom dark mode styling to the chart layout (transparency, fonts, gridlines, hover).
+    """
+    font_family = "'Plus Jakarta Sans', 'Outfit', sans-serif"
+    text_color = '#cbd5e1'
+    grid_color = 'rgba(148, 163, 184, 0.08)'  # faint slate-400 grid lines
+    
+    fig.update_layout(
+        template='plotly_dark',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(family=font_family, color=text_color),
+        margin=dict(l=40, r=40, t=50, b=40),
+        hoverlabel=dict(
+            bgcolor='rgba(15, 23, 42, 0.95)',
+            bordercolor='rgba(255, 255, 255, 0.1)',
+            font=dict(family=font_family, size=13, color='#f8fafc')
+        ),
+        legend=dict(
+            bgcolor='rgba(15, 23, 42, 0.5)',
+            bordercolor='rgba(255, 255, 255, 0.05)',
+            borderwidth=1,
+            font=dict(size=11, color='#94a3b8')
+        )
+    )
+    
+    # Configure axes if present
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor=grid_color,
+        zeroline=False,
+        tickfont=dict(color='#94a3b8'),
+        titlefont=dict(color='#cbd5e1')
+    )
+    fig.update_yaxes(
+        showgrid=True,
+        gridcolor=grid_color,
+        zeroline=False,
+        tickfont=dict(color='#94a3b8'),
+        titlefont=dict(color='#cbd5e1')
+    )
+    
+    # Customise Pie/Donut traces specifically if they are present in the figure
+    for trace in fig.data:
+        if trace.type == 'pie':
+            # Subtle dark purple border matching the linear-gradient container background
+            trace.marker.line = dict(color='#1e1b4b', width=2)
+            if not hasattr(trace, 'hole') or trace.hole is None or trace.hole == 0:
+                trace.hole = 0.4
+                
+    return fig

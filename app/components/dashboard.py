@@ -6,6 +6,15 @@ import pandas as pd
 from database import queries
 from app.utils.db_utils import execute_query
 from app.utils.auth_utils import get_current_user
+from app.utils.chart_utils import (
+    apply_premium_chart_layout,
+    BLUE_PALETTE,
+    RED_PALETTE,
+    GREEN_PALETTE,
+    YELLOW_PALETTE,
+    FOOD_TYPE_COLOR_MAP,
+    STATUS_COLOR_MAP
+)
 
 def render_dashboard_section():
     user = get_current_user()
@@ -108,9 +117,10 @@ def render_dashboard_section():
                 # Sort ASC chronologically for line plotting
                 df_plot = df.sort_values(by='Claim_Date', ascending=True)
                 fig = px.line(df_plot, x='Claim_Date', y='Total_Claims', markers=True,
-                              color_discrete_sequence=['#a78bfa'],
+                              color_discrete_sequence=[BLUE_PALETTE[0]],
                               template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                fig.update_traces(line=dict(width=3), marker=dict(size=8, symbol='circle', line=dict(color='#0f172a', width=1.5)))
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("2. "):
@@ -138,9 +148,9 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Contribution by Type")
                 fig = px.pie(df, names='Provider_Type', values='Total_Quantity_Contributed',
-                             color_discrete_sequence=px.colors.qualitative.Pastel,
+                             color_discrete_sequence=YELLOW_PALETTE,
                              template='plotly_dark', hole=0.4)
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("3. "):
@@ -196,9 +206,10 @@ def render_dashboard_section():
                 st.markdown("##### Top 10 Receivers (Quantity Claimed)")
                 fig = px.bar(df.head(10), x='Total_Quantity_Claimed', y='Receiver_Name', orientation='h',
                              color='Receiver_Type',
-                             color_discrete_sequence=px.colors.qualitative.Set2,
+                             color_discrete_sequence=BLUE_PALETTE,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("5. "):
@@ -232,9 +243,9 @@ def render_dashboard_section():
                 })
                 
                 fig = px.pie(chart_df, names='Category', values='Quantity',
-                             color_discrete_sequence=['#818cf8', '#38bdf8'],
-                             template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                             color_discrete_sequence=[GREEN_PALETTE[2], GREEN_PALETTE[0]],
+                             template='plotly_dark', hole=0.4)
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("6. "):
@@ -270,19 +281,20 @@ def render_dashboard_section():
                 fig = make_subplots(specs=[[{"secondary_y": True}]])
                 
                 fig.add_trace(
-                    go.Bar(x=df_subset['City'], y=df_subset['Total_Quantity'], name="Total Quantity (Units)", marker_color='#38bdf8'),
+                    go.Bar(x=df_subset['City'], y=df_subset['Total_Quantity'], name="Total Quantity (Units)", 
+                           marker_color=BLUE_PALETTE[1], marker_line=dict(color='rgba(255,255,255,0.1)', width=1)),
                     secondary_y=False,
                 )
                 
                 fig.add_trace(
-                    go.Scatter(x=df_subset['City'], y=df_subset['Listing_Count'], name="Listing Count", mode="lines+markers", line=dict(color='#2dd4bf', width=3)),
+                    go.Scatter(x=df_subset['City'], y=df_subset['Listing_Count'], name="Listing Count", mode="lines+markers", 
+                               line=dict(color=BLUE_PALETTE[0], width=3),
+                               marker=dict(size=8, color=BLUE_PALETTE[0], line=dict(color='#0f172a', width=1.5))),
                     secondary_y=True,
                 )
                 
+                apply_premium_chart_layout(fig)
                 fig.update_layout(
-                    template='plotly_dark',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
                 
@@ -312,15 +324,10 @@ def render_dashboard_section():
                 st.markdown("##### Raw Output Table")
                 st.dataframe(df, use_container_width=True, hide_index=True)
             with col_right:
-                color_map = {
-                    'Non-Vegetarian': '#ef4444', # Red
-                    'Vegetarian': '#22c55e',     # Green
-                    'Vegan': '#3b82f6'           # Blue
-                }
                 fig = px.pie(df, names='Food_Type', values='Total_Quantity',
-                             color='Food_Type', color_discrete_map=color_map,
-                             template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                             color='Food_Type', color_discrete_map=FOOD_TYPE_COLOR_MAP,
+                             template='plotly_dark', hole=0.4)
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("8. "):
@@ -347,15 +354,11 @@ def render_dashboard_section():
                 st.dataframe(df.head(15), use_container_width=True, hide_index=True)
             with col_right:
                 st.markdown("##### Top 10 Foods by Claim Count")
-                color_map = {
-                    'Non-Vegetarian': '#ef4444', # Red
-                    'Vegetarian': '#22c55e',     # Green
-                    'Vegan': '#3b82f6'           # Blue
-                }
                 fig = px.bar(df.head(10), x='Claim_Count', y='Food_Name', orientation='h',
-                             color='Food_Type', color_discrete_map=color_map,
+                             color='Food_Type', color_discrete_map=FOOD_TYPE_COLOR_MAP,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("9. "):
@@ -386,8 +389,9 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Successful Claims Top Providers")
                 fig = px.bar(df, x='Provider_Name', y='Successful_Claims_Count', color='Provider_Type',
+                             color_discrete_sequence=GREEN_PALETTE,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("10. "):
@@ -413,10 +417,9 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Claim Status Percentage")
                 fig = px.pie(df, names='Status', values='Percentage',
-                             color='Status',
-                             color_discrete_map={'Completed': '#4ade80', 'Pending': '#facc15', 'Cancelled': '#f87171'},
-                             template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                             color='Status', color_discrete_map=STATUS_COLOR_MAP,
+                             template='plotly_dark', hole=0.4)
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("11. "):
@@ -444,9 +447,10 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Top 10 Receivers by Avg Claim Size")
                 fig = px.bar(df.head(10), x='Avg_Quantity_Claimed', y='Receiver_Name',
-                             orientation='h', color_discrete_sequence=['#fbbf24'],
+                             orientation='h', color_discrete_sequence=[YELLOW_PALETTE[1]],
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("12. "):
@@ -473,9 +477,9 @@ def render_dashboard_section():
             with col_right:
                 st.markdown("##### Claim Count by Meal Type")
                 fig = px.bar(df, x='Meal_Type', y='Claim_Count',
-                             color='Meal_Type', color_discrete_sequence=px.colors.qualitative.Vivid,
+                             color='Meal_Type', color_discrete_sequence=RED_PALETTE,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("13. "):
@@ -504,8 +508,10 @@ def render_dashboard_section():
                 st.markdown("##### Top 10 Donors (Quantity)")
                 fig = px.bar(df.head(10), x='Total_Quantity_Donated', y='Provider_Name',
                              orientation='h', color='Provider_Type',
+                             color_discrete_sequence=BLUE_PALETTE,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis={'categoryorder':'total ascending'})
+                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("14. "):
@@ -530,15 +536,10 @@ def render_dashboard_section():
                 st.dataframe(df, use_container_width=True, hide_index=True)
             with col_right:
                 st.markdown("##### Avg Quantity per Listing by Type")
-                color_map = {
-                    'Non-Vegetarian': '#ef4444', # Red
-                    'Vegetarian': '#22c55e',     # Green
-                    'Vegan': '#3b82f6'           # Blue
-                }
                 fig = px.bar(df, x='Food_Type', y='Avg_Quantity_Listed',
-                             color='Food_Type', color_discrete_map=color_map,
+                             color='Food_Type', color_discrete_map=FOOD_TYPE_COLOR_MAP,
                              template='plotly_dark')
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                apply_premium_chart_layout(fig)
                 st.plotly_chart(fig, use_container_width=True)
 
     elif selected_query_label.startswith("15. "):

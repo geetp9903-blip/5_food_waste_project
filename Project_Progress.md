@@ -36,3 +36,7 @@ I have successfully structured and built the core functionality of the Local Foo
 *   **Dynamic Query Routing**: I added routing to `database/queries.py` to selectively query either the static database or the active database depending on Streamlit session state, defaulting to the static database.
 *   **Interactive Selector UI**: I integrated a radio toggle under the analytics title to allow users to switch the data source dynamically between "Original Raw Data (Static)" and "Live App Data (Active)".
 *   **Query 3 Synchronization**: I synchronized the directory lookup filter query to run dynamically on the selected database so that new partner cities are excluded from the static view but visible in the live view.
+
+## 8. Cohesive Visual Theme across Visualizations
+*   I created a chart utility module `app/utils/chart_utils.py` defining custom, high-contrast monochromatic palettes (Blue, Red, Green, Yellow) and semantic maps (for claim status and food types).
+*   I refactored all 12 Plotly figures in `app/components/dashboard.py` to apply the monochromatic sequences and semantic colors, and integrated a premium layout utility to render clean, transparent charts matching the glass card aesthetics.
